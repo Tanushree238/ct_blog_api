@@ -6,6 +6,7 @@ from PIL import Image as pil_img
 import base64
 from binascii import a2b_base64
 from app.decorators import login_required
+from sqlalchemy import or_
 
 @app.route("/", methods=["GET","POST"] )
 def home():
@@ -261,3 +262,25 @@ def explore_feed():
 			posts.append(valid_post)
 	posts.sort(reverse=True,key=lambda x: x["created_on"])
 	return jsonify({'status':'success','posts':posts})
+
+
+
+@app.route("/search_user", methods=["POST"], endpoint="search_user" )
+@cross_origin()
+def search_user():
+	form=request.json
+	print(form)
+	text=form["searchInput"]
+	user = User.verify_login_token( request.headers["Authentication"] )
+	result_users = User.query.filter(or_(User.username.like( "%{}%".format(text)), User.name.like( "%{}%".format(text) ))).all()
+	results=[]
+	for result_user in result_users:
+		if result_user != user:
+			result = {}
+			result["name"]=result_user.name
+			result["image"]=result_user.image
+			result["is_following"]=user.is_following(result_user.id)
+			results.append(result)
+	return jsonify({'status':'success','results':results})
+
+

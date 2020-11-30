@@ -48,6 +48,12 @@ class User(db.Model):
 			return user
 		else:
 			return None	
+	def is_following(self,user_id):
+		follow_obj=Follow.query.filter_by(follower_id=self.id,followed_id=user_id).first()
+		if follow_obj:
+			return True
+		else:
+			return False
 
 
 class Follow(db.Model):
