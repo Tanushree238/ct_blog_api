@@ -33,7 +33,7 @@ class User(db.Model):
 	def check_password( self,password ):
 		return check_password_hash( self.password_hash, password ) 
 
-	def get_login_token(self,expire_in=720):
+	def get_login_token(self,expire_in=86400):
 		return jwt.encode( {'username':self.username, 'exp':time()+expire_in }, app.config['SECRET_KEY'], algorithm='HS256' ).decode('utf-8')
 
 	@staticmethod
@@ -65,12 +65,19 @@ class Category(db.Model):
 	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
 
 
+class Privacy(db.Model):
+	id = db.Column( db.Integer, primary_key=True )
+	description = db.Column( db.String(200), nullable=False )
+	created_on = db.Column( db.DateTime, default=datetime.now )
+	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
+
+
 class Post(db.Model):
 	id = db.Column( db.Integer, primary_key=True )
-	title=db.Column( db.String(255), nullable=False, index=True  )
-	content=db.Column( LONGTEXT , nullable=False )
-	privacy=db.Column( db.String(50), nullable=False, index=True  )
-	user_id=db.Column( db.Integer, db.ForeignKey('user.id') )
+	title = db.Column( db.String(255), nullable=False, index=True  )
+	content = db.Column( LONGTEXT , nullable=False )
+	privacy = db.Column( db.Integer, db.ForeignKey('privacy.id') )
+	user_id = db.Column( db.Integer, db.ForeignKey('user.id') )
 	like = db.relationship( 'PostLike', backref="post_obj", lazy="dynamic" )
 	comment = db.relationship( 'PostComment', backref="post_obj", lazy="dynamic" )
 	created_on = db.Column( db.DateTime, default=datetime.now )
