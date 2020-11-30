@@ -26,7 +26,7 @@ def register_user():
 	user_obj.set_password(form["password"])
 	db.session.add(user_obj)
 	if form["image"]["data"]:
-		with open("static/profile_pic/{}.{}".format(form["username"], form["image"]["ext"]), "wb") as img:
+		with open("app/static/profile_pic/{}.{}".format(form["username"], form["image"]["ext"]), "wb") as img:
 			data = base64.b64decode(form["image"]["data"])
 			img.write( data )
 
@@ -80,21 +80,21 @@ def create_post():
 		db.session.commit()		
 
 		if form["image1"]["data"] and form["image1"]["ext"]:
-			with open("static/post_img/{}.{}".format(str(post_obj.id)+"_1", form["image1"]["ext"]), "wb") as img:
+			with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_1", form["image1"]["ext"]), "wb") as img:
 				data = base64.b64decode(form["image1"]["data"])
 				img.write( data )
 			postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(str(post_obj.id)+"_2", form["image1"]["ext"]) )
 			db.session.add(postImgObj)
 
 		if form["image2"]["data"] and form["image2"]["ext"]:
-			with open("static/post_img/{}.{}".format(str(post_obj.id)+"_2", form["image2"]["ext"]), "wb") as img:
+			with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_2", form["image2"]["ext"]), "wb") as img:
 				data = base64.b64decode(form["image2"]["data"])
 				img.write( data )
 			postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(str(post_obj.id)+"_2", form["image2"]["ext"]) )
 			db.session.add(postImgObj)
 
 		if form["image3"]["data"] and form["image3"]["ext"]:
-			with open("static/post_img/{}.{}".format(str(post_obj.id)+"_3", form["image3"]["ext"]), "wb") as img:
+			with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_3", form["image3"]["ext"]), "wb") as img:
 				data = base64.b64decode(form["image3"]["data"])
 				img.write( data )
 			postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(str(post_obj.id)+"_3", form["image3"]["ext"]) )
