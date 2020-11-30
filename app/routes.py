@@ -330,6 +330,7 @@ def fetch_post_data():
 		post["id"]=post_obj.id
 		post["title"]=post_obj.title
 		post["username"]=post_obj.post_user_obj.username
+		post["name"]=post_obj.post_user_obj.name
 		post["content"]=post_obj.content
 		post["read_time"]=post_obj.read_time if post_obj.read_time else 0
 		post["is_liked"]= True if PostLike.query.filter_by(post_id=post_obj.id,user_id=user.id).first() else False 
@@ -337,12 +338,12 @@ def fetch_post_data():
 		post["is_following"]= True if Follow.query.filter_by(follower_id=user.id, followed_id=post_obj.post_user_obj.id).first() else False
 		post["no_of_comments"]=post_obj.comment.count()
 		post["created_on"]=post_obj.created_on
-
+		
 		if user.image:
-			img_path = "app/static/profile_pic/{}".format( user.image )
+			img_path = "app/static/profile_pic/{}".format( post_obj.post_user_obj.image )
 			if os.path.isfile(img_path):
 				with open(img_path, "rb") as img:
-					imgUri = "data:image/{};base64,".format( user.image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+					imgUri = "data:image/{};base64,".format( post_obj.post_user_obj.image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
 					post["profile_pic"]=imgUri
 			else:
 				print(user.image, "error1")
