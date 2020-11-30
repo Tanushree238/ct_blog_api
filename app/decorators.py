@@ -3,7 +3,6 @@ from app.models import User
 
 def login_required(func):
     def check(*args,**kwargs):
-        print(request.headers)
         if "Authentication" in request.headers:
             if User.verify_login_token( request.headers["Authentication"] ):
                 return func(*args,**kwargs)
