@@ -15,7 +15,7 @@ def home():
 
 
 @app.route("/register_user", methods=["POST"], endpoint="register_user" )
-@cross_origin()
+@cross_origin()	
 def register_user():
 	form=request.json
 	user_obj=User(
