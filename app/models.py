@@ -29,7 +29,7 @@ class User(db.Model):
 	def check_password( self,password ):
 		return check_password_hash( self.password_hash, password ) 
 
-	def get_login_token(self,expire_in=720):
+	def get_login_token(self,expire_in=86400):
 		return jwt.encode( {'username':self.username, 'exp':time()+expire_in }, app.config['SECRET_KEY'], algorithm='HS256' ).decode('utf-8')
 
 	@staticmethod
