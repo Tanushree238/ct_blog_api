@@ -10,24 +10,26 @@ def home():
 
 
 @app.route("/register_user", methods=["POST"], endpoint="register_user" )
-@cross_origin()
+@cross_origin()	
 def register_user():
 	form=request.json
-	user_obj=User(
-			username=form["username"],
-			name=form["name"],
-			email=form["email"],
-			contact=form["contact"],
-			bio=form["bio"]
-			)
-	user_obj.set_password(form["password"])
-	db.session.add(user_obj)
-	db.session.commit()
-	token = user_obj.get_login_token()
-	return jsonify({'status':'success','token':token})
+	print(form)
+	# user_obj=User(
+	# 		username=form["username"],
+	# 		name=form["name"],
+	# 		email=form["email"],
+	# 		contact=form["contact"],
+	# 		bio=form["bio"]
+	# 		)
+	# user_obj.set_password(form["password"])
+	# db.session.add(user_obj)
+	# db.session.commit()
+	# token = user_obj.get_login_token()
+	return jsonify({'status':'success'})
 
 
-@app.route("contact_validation",methods=["POST"],endpoint="contact_validation")
+@app.route("/contact_validation",methods=["POST"],endpoint="contact_validation")
+@cross_origin()
 def contact_validation():
 	data = request.json
 	user = User.query.filter_by(contact=data['contact']).first()
@@ -37,7 +39,8 @@ def contact_validation():
 		return jsonify({'status':'invalid'})
 
 
-@app.route("username_validation",methods=["POST"],endpoint="username_validation")
+@app.route("/username_validation",methods=["POST"],endpoint="username_validation")
+@cross_origin()
 def username_validation():
 	data = request.json
 	user = User.query.filter_by(username=data['username']).first()
@@ -47,7 +50,8 @@ def username_validation():
 		return jsonify({'status':'invalid'})
 
 
-@app.route("email_validation",methods=["POST"],endpoint="email_validation")
+@app.route("/email_validation",methods=["POST"],endpoint="email_validation")
+@cross_origin()
 def email_validation():
 	data = request.json
 	user = User.query.filter_by(email=data['email']).first()
