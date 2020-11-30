@@ -139,3 +139,125 @@ def validate_contact():
 		else:
 			return jsonify({ "status": False, "msg": "This Contact is already Exists." })
 	abort(500)
+
+
+@app.route("/follow_user", methods=["POST"], endpoint="follow_user" )
+@cross_origin()
+def follow_user():
+	form=request.json
+	follower=User.query.filter_by(username=form["follower"]).first()
+	following=User.query.filter_by(username=form["following"]).first()
+	follow=Follow(
+			follower_id=follower.id,
+			followed_id=following.id
+			)
+	db.session.add(follow)
+	db.session.commit()
+	return jsonify({'status':'success','msg':'{} is now following {}'.format(follower.username,following.username)})
+
+# Users followed by User(username)
+@app.route("/following_users", methods=["POST"], endpoint="following_users" )
+@cross_origin()
+def following_users():
+	form=request.json
+	user=User.query.filter_by(username=form["username"]).first()
+	following_users=[]
+	for following_user in user.following.all():
+		user={}
+		user["username"]=following_user.following_user_obj.username
+		user["name"]=following_user.following_user_obj.name
+		following_users.append(user)
+	return jsonify({'status':'success','following_users':following_users})
+
+# Users following User(username)
+@app.route("/followers", methods=["POST"], endpoint="followers" )
+@cross_origin()
+def followers():
+	form=request.json
+	user=User.query.filter_by(username=form["username"]).first()
+	followers=[]
+	for follower in user.follower.all():
+		user={}
+		user["username"]=follower.following_user_obj.username
+		user["name"]=follower.following_user_obj.name
+		followers.append(user)
+	return jsonify({'status':'success','followers':followers})
+
+
+@app.route("/is_following", methods=["POST"], endpoint="is_following" )
+@cross_origin()
+def is_following():
+	form=request.json
+	follower=User.query.filter_by(username=form["username"]).first()
+	following=User.query.filter_by(username=form["is_following"]).first()
+	follow_obj=Follow.query.filter_by(follower_id=follower.id,followed_id=following.id).first()
+	if follow_obj:
+		return jsonify({'is_following':'True'})
+	else:
+		return jsonify({'is_following':'False'})
+
+
+@app.route("/like_post", methods=["POST"], endpoint="like_post" )
+@cross_origin()
+def like_post():
+	form=request.json
+	user=User.query.filter_by(username=form["username"]).first()
+	post=Post.query.filter_by(id=form["post_id"]).first()
+	post_like_obj=PostLike(
+			user_id=user.id,
+			post_id=post.id
+			)
+	db.session.add(post_like_obj)
+	db.session.commit()
+	return jsonify({'status':'success','msg':'{} liked post {}'.format(user.username,post.title)})
+
+
+@app.route("/comment_post", methods=["POST"], endpoint="comment_post" )
+@cross_origin()
+def comment_post():
+	form=request.json
+	user=User.query.filter_by(username=form["username"]).first()
+	post=Post.query.filter_by(id=form["post_id"]).first()
+	post_comment_obj=PostComment(
+			user_id=user.id,
+			post_id=post.id,
+			comment=form["comment"]
+			)
+	db.session.add(post_comment_obj)
+	db.session.commit()
+	return jsonify({'status':'success','msg':'{} commmented on post {}'.format(user.username,post.title)})
+
+
+@app.route("/home_feed", methods=["POST"], endpoint="home_feed" )
+@cross_origin()
+def home_feed():
+	form=request.json
+	user=User.query.filter_by(username=form["username"]).first()
+	posts=[]
+	for follower in user.following.all():
+		for follower_post in follower.follower_user_obj.post.all():
+			if follower_post.privacy!="Only Me":
+				post={}
+				post["title"]=follower_post.title
+				post["content"]=follower_post.content
+				post["likes"]=follower_post.like.count()
+				post["created_on"]=follower_post.created_on
+				posts.append(post)
+	posts.sort(reverse=True,key=lambda x: x["created_on"])
+	return jsonify({'status':'success','posts':posts})
+
+
+@app.route("/explore_feed", methods=["GET"], endpoint="explore_feed" )
+@cross_origin()
+def explore_feed():
+	all_posts=Post.query.filter_by(privacy="public").limit(100)
+	posts=[]
+	for post in all_posts:
+			valid_post={}
+			valid_post["title"]=post.title
+			valid_post["content"]=post.content
+			valid_post["likes"]=post.like.count()
+			valid_post["created_on"]=post.created_on
+			posts.append(valid_post)
+	posts.sort(reverse=True,key=lambda x: x["created_on"])
+	return jsonify({'status':'success','posts':posts})

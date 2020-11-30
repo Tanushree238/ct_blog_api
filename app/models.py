@@ -20,6 +20,10 @@ class User(db.Model):
 	contact = db.Column( db.BigInteger, unique=True, nullable=False)
 	image=db.Column( db.String(60), nullable=True, index=True )  
 	bio=db.Column( LONGTEXT , nullable=True )
+	following = db.relationship( 'Follow', backref="following_user_obj", lazy="dynamic", foreign_keys="Follow.follower_id" )
+	follower = db.relationship( 'Follow', backref="follower_user_obj", lazy="dynamic", foreign_keys="Follow.followed_id" )
+	post = db.relationship( 'Post', backref="post_user_obj", lazy="dynamic" )
+
 	created_on = db.Column( db.DateTime, default=datetime.now )
 	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
 
@@ -67,6 +71,8 @@ class Post(db.Model):
 	content=db.Column( LONGTEXT , nullable=False )
 	privacy=db.Column( db.String(50), nullable=False, index=True  )
 	user_id=db.Column( db.Integer, db.ForeignKey('user.id') )
+	like = db.relationship( 'PostLike', backref="post_obj", lazy="dynamic" )
+	comment = db.relationship( 'PostComment', backref="post_obj", lazy="dynamic" )
 	created_on = db.Column( db.DateTime, default=datetime.now )
 	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
 
