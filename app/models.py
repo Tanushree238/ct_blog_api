@@ -23,6 +23,8 @@ class User(db.Model):
 	following = db.relationship( 'Follow', backref="following_user_obj", lazy="dynamic", foreign_keys="Follow.follower_id" )
 	follower = db.relationship( 'Follow', backref="follower_user_obj", lazy="dynamic", foreign_keys="Follow.followed_id" )
 	post = db.relationship( 'Post', backref="post_user_obj", lazy="dynamic" )
+	like_post = db.relationship( 'PostLike', backref="like_user_obj", lazy="dynamic" )
+	comment_post = db.relationship( 'PostComment', backref="comment_user_obj", lazy="dynamic" )
 
 	created_on = db.Column( db.DateTime, default=datetime.now )
 	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
@@ -67,6 +69,7 @@ class Follow(db.Model):
 class Category(db.Model):
 	id = db.Column( db.Integer, primary_key=True )
 	name=db.Column( db.String(200), nullable=False )
+	post = db.relationship( 'PostCategoryMapper', backref="category_obj", lazy="dynamic" )
 	created_on = db.Column( db.DateTime, default=datetime.now )
 	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
 
@@ -88,6 +91,7 @@ class Post(db.Model):
 	like = db.relationship( 'PostLike', backref="post_obj", lazy="dynamic" )
 	images = db.relationship( 'PostImage', backref="post_obj", lazy="dynamic" )
 	comment = db.relationship( 'PostComment', backref="post_obj", lazy="dynamic" )
+	category = db.relationship( 'PostCategoryMapper', backref="post_obj", lazy="dynamic" )
 	created_on = db.Column( db.DateTime, default=datetime.now )
 	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
 
