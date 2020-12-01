@@ -463,6 +463,7 @@ def user_details():
     form = request.json
     current_user = User.verify_login_token(request.headers["Authentication"])
     details = {}
+    image = False
     if form and "username" in form:
         user = User.query.filter_by(username=form["username"]).first()
         details["name"] = user.name
@@ -497,7 +498,7 @@ def user_details():
         details["followingCount"] = current_user.following.count()
         details["bio"] = current_user.bio
     print(details)
-    return jsonify({'status': 'success', 'details': details, 'image': image if image else False})
+    return jsonify({'status': 'success', 'details': details, 'image': image})
 
 
 @app.route("/options", methods=["GET"], endpoint="options")
