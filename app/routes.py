@@ -475,6 +475,7 @@ def user_details():
                     base64.b64encode(img.read()))[2:][:-1]
                 image = imgUri
         details["is_following"] = current_user.is_following(user.id)
+        print(current_user.id, user.id, current_user.name, user.name)
         details["show_follow_btn"] = False if current_user.id == user.id else True
         details["show_edit_btn"] = True if current_user.id == user.id else False
         details["postCount"] = user.post.count()
