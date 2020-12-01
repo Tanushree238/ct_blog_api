@@ -497,7 +497,7 @@ def user_details():
         details["followingCount"] = current_user.following.count()
         details["bio"] = current_user.bio
     print(details)
-    return jsonify({'status': 'success', 'details': details, 'image': image})
+    return jsonify({'status': 'success', 'details': details, 'image': image if image else False})
 
 
 @app.route("/options", methods=["GET"], endpoint="options")
