@@ -154,6 +154,7 @@ def follow_user():
 	print(form)
 	follower = User.verify_login_token( request.headers["Authentication"] )
 	following=User.query.filter_by(username=form["following"]).first()
+	print(follower.name,following.name)
 	if( "status" in form and following ):
 		follow_obj = Follow.query.filter_by(follower_id=follower.id, followed_id=following.id).first()
 		if( form["status"] ):
@@ -165,6 +166,7 @@ def follow_user():
 				db.session.add(follow)
 				db.session.commit()
 		else:
+			print(follow_obj)
 			db.session.delete(follow_obj)
 			db.session.commit()
 		return jsonify({'status':'success'})
@@ -427,6 +429,7 @@ def search_user():
 					imgUri = "data:image/{};base64,".format( result_user.image[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
 					result["image"]=imgUri
 			result["is_following"]=user.is_following(result_user.id)
+			result["show_follow_btn"]=True if result_user!=user else False
 			results.append(result)
 	return jsonify({'status':'success','results':results})
 
@@ -453,6 +456,32 @@ def user_details():
 		details["followerCount"]=user.follower.count()
 		details["followingCount"]=user.following.count()
 		details["bio"]=user.bio
+		posts=[]
+		for my_post in user.post.all():
+			post={}
+			post["id"]=my_post.id
+			post["title"]=my_post.title
+			post["username"]=my_post.post_user_obj.username
+			post["content"]=my_post.content
+			post["read_time"]=my_post.read_time if my_post.read_time else 0
+			post["likes"]=my_post.like.count()
+			post["is_liked"]= True if PostLike.query.filter_by(post_id=my_post.id,user_id=user.id).first() else False 
+			post["created_on"]=my_post.created_on
+			post["category"]=my_post.category.all()[0].category_obj.name
+			if my_post.images.first():
+				img_path = "app/static/post_img/{}".format( my_post.images.first().image )
+				if os.path.isfile(img_path):
+					with open(img_path, "rb") as img:
+						imgUri = "data:image/{};base64,".format( my_post.images.first().image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+						post["image"]=imgUri
+				else:
+					print(my_post.images.first().image, "error1")
+			else:
+				print("error2")
+
+			posts.append(post)
+			
+		posts.sort(reverse=True,key=lambda x: x["created_on"])
 	else:
 		details["name"]=current_user.name
 		details["username"]=current_user.username
@@ -468,8 +497,35 @@ def user_details():
 		details["followerCount"]=current_user.follower.count()
 		details["followingCount"]=current_user.following.count()
 		details["bio"]=current_user.bio
-	print(details)
-	return jsonify({'status':'success','details':details,'image':image}) 
+		posts=[]
+	
+		for my_post in current_user.post.all():
+			post={}
+			post["id"]=my_post.id
+			post["title"]=my_post.title
+			post["username"]=my_post.post_user_obj.username
+			post["content"]=my_post.content
+			post["read_time"]=my_post.read_time if my_post.read_time else 0
+			post["likes"]=my_post.like.count()
+			post["is_liked"]= True if PostLike.query.filter_by(post_id=my_post.id,user_id=current_user.id).first() else False 
+			post["created_on"]=my_post.created_on
+			post["category"]=my_post.category.all()[0].category_obj.name
+			if my_post.images.first():
+				img_path = "app/static/post_img/{}".format( my_post.images.first().image )
+				if os.path.isfile(img_path):
+					with open(img_path, "rb") as img:
+						imgUri = "data:image/{};base64,".format( my_post.images.first().image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+						post["image"]=imgUri
+				else:
+					print(my_post.images.first().image, "error1")
+			else:
+				print("error2")
+
+			posts.append(post)
+			
+		posts.sort(reverse=True,key=lambda x: x["created_on"])
+	print(details,posts)
+	return jsonify({'status':'success','details':details,'image':image,'posts':posts}) 
 
 
 
@@ -515,3 +571,40 @@ def liked_by_users():
 		result["show_follow_btn"]=True if result_user!=user else False
 		results.append(result)
 	return jsonify({'status':'success','results':results})
+
+
+
+@app.route("/user_posts", methods=["POST"], endpoint="user_posts" )
+@cross_origin()
+@login_required
+def user_posts():
+	form=request.json
+	user = User.verify_login_token( request.headers["Authentication"] )
+	posts=[]
+	
+	for my_post in user.post.all():
+		post={}
+		post["id"]=my_post.id
+		post["title"]=my_post.title
+		post["username"]=my_post.post_user_obj.username
+		post["content"]=my_post.content
+		post["read_time"]=my_post.read_time if my_post.read_time else 0
+		post["likes"]=my_post.like.count()
+		post["is_liked"]= True if PostLike.query.filter_by(post_id=my_post.id,user_id=user.id).first() else False 
+		post["created_on"]=my_post.created_on
+		post["category"]=my_post.category.all()[0].category_obj.name
+		if my_post.images.first():
+			img_path = "app/static/post_img/{}".format( my_post.images.first().image )
+			if os.path.isfile(img_path):
+				with open(img_path, "rb") as img:
+					imgUri = "data:image/{};base64,".format( my_post.images.first().image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+					post["image"]=imgUri
+			else:
+				print(my_post.images.first().image, "error1")
+		else:
+			print("error2")
+
+		posts.append(post)
+
+	posts.sort(reverse=True,key=lambda x: x["created_on"])
+	return jsonify({'status':'success','posts':posts})
