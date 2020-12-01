@@ -490,9 +490,9 @@ def user_details():
                 imgUri = "data:image/{};base64,".format(current_user.image[-1]) + str(
                     base64.b64encode(img.read()))[2:][:-1]
                 image = imgUri
-        details["is_following"] = False
-        details["show_follow_btn"] = False
-        details["show_edit_btn"] = True
+        details["is_following"] = current_user.is_following(user.id)
+        details["show_follow_btn"] = False if current_user.id == user.id else True
+        details["show_edit_btn"] = True if current_user.id == user.id else False
         details["postCount"] = current_user.post.count()
         details["followerCount"] = current_user.follower.count()
         details["followingCount"] = current_user.following.count()
