@@ -561,7 +561,7 @@ def fetch_comment():
         result["user_id"] = result_user.id
         result["comment_id"] = result_comment.id
         result["comment"] = result_comment.comment
-        result["read_only"] = True if user.id != result_comment.post_obj.post_user_obj.id else False
+        result["read_only"] = True if user.id != result_comment.user_id else False
         result["created_on"] = result_comment.created_on.strftime(
             "%d %b %Y  %I:%M %p")
         result["name"] = result_user.name
