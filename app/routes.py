@@ -6,6 +6,7 @@ from PIL import Image as pil_img
 import base64
 from binascii import a2b_base64
 from app.decorators import login_required
+from sqlalchemy import or_
 import math
 import os
 
@@ -68,20 +69,21 @@ def create_post():
 	form=request.json
 	print(form)
 	user = User.verify_login_token( request.headers["Authentication"] )
+	privacy_obj=Privacy.query.filter_by(description=form["privacy"]).first()
 	if user:
 		post_obj=Post(
 				title=form["title"],
 				content=form["content"],
 				user_id=user.id,
 				read_time = math.ceil(len(form["content"].split())/125),
-				# privacy=form["privacy"]
-				privacy=1
+				privacy=privacy_obj.id,
 			)
-
-		
 		db.session.add(post_obj)
-		db.session.commit()		
-
+		db.session.commit()	
+		category_obj=Category.query.filter_by(name=form["category"]).first()
+		post_category=PostCategoryMapper(category_id=category_obj.id,post_id=post_obj.id)
+		db.session.add(post_category)
+		db.session.commit()
 		if form["image1"]["data"] and form["image1"]["ext"]:
 			with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_1", form["image1"]["ext"]), "wb") as img:
 				data = base64.b64decode(form["image1"]["data"])
@@ -149,6 +151,7 @@ def validate_contact():
 @login_required
 def follow_user():
 	form=request.json
+	print(form)
 	follower = User.verify_login_token( request.headers["Authentication"] )
 	following=User.query.filter_by(username=form["following"]).first()
 	if( "status" in form and following ):
@@ -272,7 +275,7 @@ def home_feed():
 		post["likes"]=my_post.like.count()
 		post["is_liked"]= True if PostLike.query.filter_by(post_id=my_post.id,user_id=user.id).first() else False 
 		post["created_on"]=my_post.created_on
-
+		post["category"]=my_post.category.all()[0].category_obj.name
 		if my_post.images.first():
 			img_path = "app/static/post_img/{}".format( my_post.images.first().image )
 			if os.path.isfile(img_path):
@@ -298,7 +301,7 @@ def home_feed():
 				post["is_liked"]= True if PostLike.query.filter_by(post_id=follower_post.id,user_id=user.id).first() else False 
 				post["likes"]=follower_post.like.count()
 				post["created_on"]=follower_post.created_on
-				
+				post["category"]=follower_post.category.all()[0].category_obj.name
 				if follower_post.images.first():
 					img_path = "app/static/post_img/{}".format( follower_post.images.first().image )
 					if os.path.isfile(img_path):
@@ -328,20 +331,22 @@ def fetch_post_data():
 		post["id"]=post_obj.id
 		post["title"]=post_obj.title
 		post["username"]=post_obj.post_user_obj.username
+		post["name"]=post_obj.post_user_obj.name
 		post["content"]=post_obj.content
 		post["read_time"]=post_obj.read_time if post_obj.read_time else 0
 		post["is_liked"]= True if PostLike.query.filter_by(post_id=post_obj.id,user_id=user.id).first() else False 
 		post["no_of_likes"]=post_obj.like.count()
 		post["is_following"]= True if Follow.query.filter_by(follower_id=user.id, followed_id=post_obj.post_user_obj.id).first() else False
-		post["show_follow_btn"]= not user.id==post_obj.post_user_obj.id
+		post["show_follow_btn"]= True if post_obj.post_user_obj!=user else False
 		post["no_of_comments"]=post_obj.comment.count()
 		post["created_on"]=post_obj.created_on
+		post["category"]=post_obj.category.all()[0].category_obj.name
 
 		if user.image:
-			img_path = "app/static/profile_pic/{}".format( user.image )
+			img_path = "app/static/profile_pic/{}".format( post_obj.post_user_obj.image )
 			if os.path.isfile(img_path):
 				with open(img_path, "rb") as img:
-					imgUri = "data:image/{};base64,".format( user.image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+					imgUri = "data:image/{};base64,".format( post_obj.post_user_obj.image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
 					post["profile_pic"]=imgUri
 			else:
 				print(user.image, "error1")
@@ -363,18 +368,150 @@ def fetch_post_data():
 	else:
 		abort(500)
 
-@app.route("/explore_feed", methods=["GET"], endpoint="explore_feed" )
+
+
+@app.route("/explore_feed", methods=["POST"], endpoint="explore_feed" )
 @cross_origin()
 @login_required
 def explore_feed():
-	all_posts=Post.query.filter_by(privacy="public").limit(100)
+	form=request.json
+	user = User.verify_login_token( request.headers["Authentication"] )
 	posts=[]
-	for post in all_posts:
-			valid_post={}
-			valid_post["title"]=post.title
-			valid_post["content"]=post.content
-			valid_post["likes"]=post.like.count()
-			valid_post["created_on"]=post.created_on
-			posts.append(valid_post)
-	posts.sort(reverse=True,key=lambda x: x["created_on"])
+	all_posts=Post.query.filter_by(privacy=1).limit(100)
+	for valid_post in all_posts:
+		if not form or valid_post.category.all()[0].category_obj.name==form["category"]:
+			post={}
+			post["id"]=valid_post.id
+			post["title"]=valid_post.title
+			post["username"]=valid_post.post_user_obj.username
+			post["content"]=valid_post.content
+			post["read_time"]=valid_post.read_time if valid_post.read_time else 0
+			post["is_liked"]= True if PostLike.query.filter_by(post_id=valid_post.id,user_id=user.id).first() else False 
+			post["likes"]=valid_post.like.count()
+			post["created_on"]=valid_post.created_on
+			post["category"]=valid_post.category.all()[0].category_obj.name
+			if valid_post.images.first():
+				img_path = "app/static/post_img/{}".format( valid_post.images.first().image )
+				if os.path.isfile(img_path):
+					with open(img_path, "rb") as img:
+						imgUri = "data:image/{};base64,".format( valid_post.images.first().image.split(".")[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+						post["image"]=imgUri
+				else:
+					print(valid_post.images.first().image, "error1")
+			else:
+				print("error2")
+			posts.append(post)
+	posts.sort(reverse=True,key=lambda x: (x["likes"],x["created_on"]))
 	return jsonify({'status':'success','posts':posts})
+
+
+
+
+@app.route("/search_user", methods=["POST"], endpoint="search_user" )
+@cross_origin()
+def search_user():
+	form=request.json
+	text=form["searchInput"]
+	user = User.verify_login_token( request.headers["Authentication"] )
+	result_users = User.query.filter(or_(User.username.like( "%{}%".format(text)), User.name.like( "%{}%".format(text) ))).all()
+	results=[]
+	for result_user in result_users:
+		if result_user != user:
+			result = {}
+			result["id"]=result_user.id
+			result["name"]=result_user.name
+			result["username"]=result_user.username
+			img_path = "app/static/profile_pic/{}".format( result_user.image )
+			if os.path.isfile(img_path):
+				with open(img_path, "rb") as img:
+					imgUri = "data:image/{};base64,".format( result_user.image[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+					result["image"]=imgUri
+			result["is_following"]=user.is_following(result_user.id)
+			results.append(result)
+	return jsonify({'status':'success','results':results})
+
+
+@app.route("/user_details",methods=["POST"],endpoint="user_details")
+@cross_origin()
+def user_details():
+	form=request.json
+	current_user = User.verify_login_token( request.headers["Authentication"] )
+	details={}
+	if form and "username" in form:
+		user=User.query.filter_by(username=form["username"]).first()
+		details["name"]=user.name
+		details["username"]=user.username
+		img_path = "app/static/profile_pic/{}".format( user.image )
+		if os.path.isfile(img_path):
+			with open(img_path, "rb") as img:
+				imgUri = "data:image/{};base64,".format( user.image[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+				image=imgUri
+		details["is_following"]=current_user.is_following(user.id)
+		details["show_follow_btn"]=True
+		details["show_edit_btn"]=False
+		details["postCount"]=user.post.count()
+		details["followerCount"]=user.follower.count()
+		details["followingCount"]=user.following.count()
+		details["bio"]=user.bio
+	else:
+		details["name"]=current_user.name
+		details["username"]=current_user.username
+		img_path = "app/static/profile_pic/{}".format( current_user.image )
+		if os.path.isfile(img_path):
+			with open(img_path, "rb") as img:
+				imgUri = "data:image/{};base64,".format( current_user.image[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+				image=imgUri
+		details["is_following"]=False
+		details["show_follow_btn"]=False
+		details["show_edit_btn"]=True
+		details["postCount"]=current_user.post.count()
+		details["followerCount"]=current_user.follower.count()
+		details["followingCount"]=current_user.following.count()
+		details["bio"]=current_user.bio
+	print(details)
+	return jsonify({'status':'success','details':details,'image':image}) 
+
+
+
+
+@app.route("/options", methods=["GET"], endpoint="options" )
+@cross_origin()
+@login_required
+def options():
+	privacy_options=Privacy.query.all()
+	privacy=[]
+	for option in privacy_options:
+		privacy_option={}
+		privacy_option["name"]=option.description
+		privacy.append(privacy_option)
+	category_options=Category.query.all()
+	category=[]
+	for option in category_options:
+		category_option={}
+		category_option["name"]=option.name
+		category.append(category_option)
+	return jsonify({'status':'success',"privacy":privacy,'category':category})
+
+@app.route("/liked_by_users", methods=["POST"], endpoint="liked_by_users" )
+@cross_origin()
+def liked_by_users():
+	form=request.json
+	post_id=form["post_id"]
+	user = User.verify_login_token( request.headers["Authentication"] )
+	result_likes = PostLike.query.filter_by(post_id=post_id).all()
+	results=[]
+	for result_like in result_likes:
+		result_user=result_like.like_user_obj
+		result = {}
+		result["id"]=result_user.id
+		result["name"]=result_user.name
+		result["username"]=result_user.username
+		img_path = "app/static/profile_pic/{}".format( result_user.image )
+		if os.path.isfile(img_path):
+			with open(img_path, "rb") as img:
+				imgUri = "data:image/{};base64,".format( result_user.image[-1] ) + str(base64.b64encode(img.read()))[2:][:-1]
+				result["image"]=imgUri
+		result["is_following"]=user.is_following(result_user.id)
+		result["show_follow_btn"]=True if result_user!=user else False
+		results.append(result)
+	return jsonify({'status':'success','results':results})
