@@ -75,7 +75,7 @@ def create_post():
 				user_id=user.id,
 				read_time = math.ceil(len(form["content"].split())/125),
 				# privacy=form["privacy"]
-				privacy="Followers"
+				privacy=1
 			)
 
 		
@@ -333,6 +333,7 @@ def fetch_post_data():
 		post["is_liked"]= True if PostLike.query.filter_by(post_id=post_obj.id,user_id=user.id).first() else False 
 		post["no_of_likes"]=post_obj.like.count()
 		post["is_following"]= True if Follow.query.filter_by(follower_id=user.id, followed_id=post_obj.post_user_obj.id).first() else False
+		post["show_follow_btn"]= not user.id==post_obj.post_user_obj.id
 		post["no_of_comments"]=post_obj.comment.count()
 		post["created_on"]=post_obj.created_on
 

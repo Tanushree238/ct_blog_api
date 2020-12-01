@@ -13,7 +13,7 @@ privacy_obj1=Privacy(description="Public")
 privacy_obj2=Privacy(description="Followers")
 privacy_obj3=Privacy(description="Only Me")
 db.session.add_all([privacy_obj1,privacy_obj2,privacy_obj3])
-# db.session.commit()
+db.session.commit()
 
 print("Category and Privacy Tables Populated")
 
