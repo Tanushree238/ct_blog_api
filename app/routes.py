@@ -29,12 +29,14 @@ def register_user():
     )
     user_obj.set_password(form["password"])
     db.session.add(user_obj)
-    if form["image"]["data"]:
+    if "image" in form and form["image"]["data"]:
         with open("app/static/profile_pic/{}.{}".format(form["username"], form["image"]["ext"]), "wb") as img:
             data = base64.b64decode(form["image"]["data"])
             img.write(data)
+            user_obj.image = "{}.{}".format(
+                form["username"], form["image"]["ext"]
+            )
 
-    user_obj.image = "{}.{}".format(form["username"], form["image"]["ext"])
     db.session.commit()
     token = user_obj.get_login_token()
     return jsonify({'status': 'success', 'token': token})
