@@ -125,6 +125,7 @@ class PostImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     image = db.Column(db.String(60), nullable=True, index=True)
+    image_no = db.Column(db.Integer, nullable=False)
     created_on = db.Column(db.DateTime, default=datetime.now)
     updated_on = db.Column(db.TIMESTAMP, server_default=text(
         'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))

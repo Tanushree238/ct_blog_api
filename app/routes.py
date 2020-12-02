@@ -9,6 +9,8 @@ from app.decorators import login_required
 from sqlalchemy import or_
 import math
 import os
+from PIL import Image
+from io import BytesIO
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -30,11 +32,15 @@ def register_user():
     user_obj.set_password(form["password"])
     db.session.add(user_obj)
     if form["image"]["data"]:
-        with open("app/static/profile_pic/{}.{}".format(form["username"], form["image"]["ext"]), "wb") as img:
-            data = base64.b64decode(form["image"]["data"])
-            img.write(data)
+        img_obj = Image.open(BytesIO(base64.b64decode(form["image"]["data"])))
+        img_obj = img_obj.resize(app.config["IMG_SIZE"])
+        buff = BytesIO()
+        img_obj.save(buff, format="JPEG")
+        with open("app/static/profile_pic/{}.{}".format(form["username"], "JPEG"), "wb") as img:
+            img.write(buff.getvalue())
+            user_obj.image = "{}.{}".format(
+                form["username"], "JPEG")
 
-    user_obj.image = "{}.{}".format(form["username"], form["image"]["ext"])
     db.session.commit()
     token = user_obj.get_login_token()
     return jsonify({'status': 'success', 'token': token})
@@ -58,11 +64,14 @@ def edit_profile():
         user_obj.bio = form["bio"]
     user_obj.set_password(form["password"])
     if form["image"]["data"]:
-        with open("app/static/profile_pic/{}.{}".format(form["username"], form["image"]["ext"]), "wb") as img:
-            data = base64.b64decode(form["image"]["data"])
-            img.write(data)
+        img_obj = Image.open(BytesIO(base64.b64decode(form["image"]["data"])))
+        img_obj = img_obj.resize(app.config["IMG_SIZE"])
+        buff = BytesIO()
+        img_obj.save(buff, format="JPEG")
+        with open("app/static/profile_pic/{}.{}".format(form["username"], "JPEG"), "wb") as img:
+            img.write(buff.getvalue())
             user_obj.image = "{}.{}".format(
-                form["username"], form["image"]["ext"])
+                form["username"], "JPEG")
 
     db.session.commit()
     return jsonify({'status': 'success'})
@@ -114,28 +123,44 @@ def create_post():
             category_id=category_obj.id, post_id=post_obj.id)
         db.session.add(post_category)
         db.session.commit()
+
         if form["image1"]["data"] and form["image1"]["ext"]:
-            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_1", form["image1"]["ext"]), "wb") as img:
-                data = base64.b64decode(form["image1"]["data"])
-                img.write(data)
-            postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(
-                str(post_obj.id)+"_1", form["image1"]["ext"]))
+            img_obj = Image.open(
+                BytesIO(base64.b64decode(form["image1"]["data"])))
+            img_obj = img_obj.resize(app.config["IMG_SIZE"])
+            buff = BytesIO()
+            img_obj.save(buff, format="JPEG")
+            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_1", "JPEG"), "wb") as img:
+                img.write(buff.getvalue())
+
+            postImgObj = PostImage(post_id=post_obj.id, image_no=1, image="{}.{}".format(
+                str(post_obj.id)+"_1", "JPEG"))
             db.session.add(postImgObj)
 
         if form["image2"]["data"] and form["image2"]["ext"]:
-            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_2", form["image2"]["ext"]), "wb") as img:
-                data = base64.b64decode(form["image2"]["data"])
-                img.write(data)
-            postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(
-                str(post_obj.id)+"_2", form["image2"]["ext"]))
+            img_obj = Image.open(
+                BytesIO(base64.b64decode(form["image2"]["data"])))
+            img_obj = img_obj.resize(app.config["IMG_SIZE"])
+            buff = BytesIO()
+            img_obj.save(buff, format="JPEG")
+            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_2", "JPEG"), "wb") as img:
+                img.write(buff.getvalue())
+
+            postImgObj = PostImage(post_id=post_obj.id, image_no=2, image="{}.{}".format(
+                str(post_obj.id)+"_2", "JPEG"))
             db.session.add(postImgObj)
 
         if form["image3"]["data"] and form["image3"]["ext"]:
-            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_3", form["image3"]["ext"]), "wb") as img:
-                data = base64.b64decode(form["image3"]["data"])
-                img.write(data)
-            postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(
-                str(post_obj.id)+"_3", form["image3"]["ext"]))
+            img_obj = Image.open(
+                BytesIO(base64.b64decode(form["image3"]["data"])))
+            img_obj = img_obj.resize(app.config["IMG_SIZE"])
+            buff = BytesIO()
+            img_obj.save(buff, format="JPEG")
+            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_3", "JPEG"), "wb") as img:
+                img.write(buff.getvalue())
+
+            postImgObj = PostImage(post_id=post_obj.id, image_no=3, image="{}.{}".format(
+                str(post_obj.id)+"_3", "JPEG"))
             db.session.add(postImgObj)
 
         db.session.commit()
@@ -835,29 +860,54 @@ def edit_post():
                 category_id=category_obj.id, post_id=post_obj.id)
             db.session.add(post_category)
             db.session.commit()
+
         if form["image1"]["data"] and form["image1"]["ext"]:
-            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_1", form["image1"]["ext"]), "wb") as img:
-                data = base64.b64decode(form["image1"]["data"])
-                img.write(data)
-            postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(
-                str(post_obj.id)+"_1", form["image1"]["ext"]))
-            db.session.add(postImgObj)
+            img_obj = Image.open(
+                BytesIO(base64.b64decode(form["image1"]["data"])))
+            img_obj = img_obj.resize(app.config["IMG_SIZE"])
+            buff = BytesIO()
+            img_obj.save(buff, format="JPEG")
+            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_1", "JPEG"), "wb") as img:
+                img.write(buff.getvalue())
+
+            prev_img_obj = PostImage.query.filter_by(
+                post_id=post_obj.id, image_no=1).first()
+            if not prev_img_obj:
+                postImgObj = PostImage(post_id=post_obj.id, image_no=1, image="{}.{}".format(
+                    str(post_obj.id)+"_1", "JPEG"))
+                db.session.add(postImgObj)
 
         if form["image2"]["data"] and form["image2"]["ext"]:
-            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_2", form["image2"]["ext"]), "wb") as img:
-                data = base64.b64decode(form["image2"]["data"])
-                img.write(data)
-            postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(
-                str(post_obj.id)+"_2", form["image2"]["ext"]))
-            db.session.add(postImgObj)
+            img_obj = Image.open(
+                BytesIO(base64.b64decode(form["image2"]["data"])))
+            img_obj = img_obj.resize(app.config["IMG_SIZE"])
+            buff = BytesIO()
+            img_obj.save(buff, format="JPEG")
+            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_2", "JPEG"), "wb") as img:
+                img.write(buff.getvalue())
+
+            prev_img_obj = PostImage.query.filter_by(
+                post_id=post_obj.id, image_no=2).first()
+            if not prev_img_obj:
+                postImgObj = PostImage(post_id=post_obj.id, image_no=2, image="{}.{}".format(
+                    str(post_obj.id)+"_2", "JPEG"))
+                db.session.add(postImgObj)
 
         if form["image3"]["data"] and form["image3"]["ext"]:
-            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_3", form["image3"]["ext"]), "wb") as img:
-                data = base64.b64decode(form["image3"]["data"])
-                img.write(data)
-            postImgObj = PostImage(post_id=post_obj.id, image="{}.{}".format(
-                str(post_obj.id)+"_3", form["image3"]["ext"]))
-            db.session.add(postImgObj)
+            img_obj = Image.open(
+                BytesIO(base64.b64decode(form["image3"]["data"])))
+            img_obj = img_obj.resize(app.config["IMG_SIZE"])
+            buff = BytesIO()
+            img_obj.save(buff, format="JPEG")
+            with open("app/static/post_img/{}.{}".format(str(post_obj.id)+"_3", "JPEG"), "wb") as img:
+                img.write(buff.getvalue())
+
+            prev_img_obj = PostImage.query.filter_by(
+                post_id=post_obj.id, image_no=3).first()
+            if not prev_img_obj:
+                postImgObj = PostImage(post_id=post_obj.id, image_no=3, image="{}.{}".format(
+                    str(post_obj.id)+"_3", "JPEG"))
+                db.session.add(postImgObj)
 
         db.session.commit()
 
