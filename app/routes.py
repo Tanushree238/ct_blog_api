@@ -67,6 +67,7 @@ def edit_profile():
 	return jsonify({'status': 'success', 'token': token})
 
 
+
 @app.route("/validate_login_token", methods=["POST"], endpoint="validate_login_token")
 @cross_origin()
 def validate_login_token():
@@ -585,6 +586,7 @@ def user_details():
 		posts.sort(reverse=True,key=lambda x: x["created_on"])
 	print(details,posts)
 	return jsonify({'status':'success','details':details,'image':image,'posts':posts}) 
+
 
 
 @app.route("/options", methods=["GET"], endpoint="options")
