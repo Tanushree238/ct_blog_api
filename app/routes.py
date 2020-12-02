@@ -61,11 +61,11 @@ def edit_profile():
         with open("app/static/profile_pic/{}.{}".format(form["username"], form["image"]["ext"]), "wb") as img:
             data = base64.b64decode(form["image"]["data"])
             img.write(data)
+            user_obj.image = "{}.{}".format(
+                form["username"], form["image"]["ext"])
 
-    user_obj.image = "{}.{}".format(form["username"], form["image"]["ext"])
     db.session.commit()
-    token = user_obj.get_login_token()
-    return jsonify({'status': 'success', 'token': token})
+    return jsonify({'status': 'success'})
 
 
 @app.route("/validate_login_token", methods=["POST"], endpoint="validate_login_token")
