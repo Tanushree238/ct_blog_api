@@ -388,7 +388,7 @@ def fetch_post_data():
         post["no_of_comments"] = post_obj.comment.count()
         post["created_on"] = post_obj.created_on
         post["category"] = post_obj.category.all()[0].category_obj.name
-
+        post["allow_edit"]=True if post_obj.post_user_obj == user else False
         if user.image:
             img_path = "app/static/profile_pic/{}".format(
                 post_obj.post_user_obj.image)
@@ -689,7 +689,7 @@ def liked_by_users():
         result["is_following"] = user.is_following(result_user.id)
         result["show_follow_btn"] = True if result_user != user else False
         results.append(result)
-    return jsonify({'status': 'success', 'results': results})
+    return jsonify({'status': 'success', 'results': results,"username":user.username})
 
 
 @app.route("/user_posts", methods=["POST"], endpoint="user_posts")
