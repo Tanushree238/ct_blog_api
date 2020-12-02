@@ -86,12 +86,12 @@ class Category(db.Model):
 
 
 class Privacy(db.Model):
-	id = db.Column( db.Integer, primary_key=True )
-	description = db.Column( db.String(200), nullable=False )
-	post = db.relationship( 'Post', backref="privacy_obj", lazy="dynamic" )
-	created_on = db.Column( db.DateTime, default=datetime.now )
-	updated_on = db.Column( db.TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') )
-
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(200), nullable=False)
+    post = db.relationship('Post', backref="privacy_obj", lazy="dynamic")
+    created_on = db.Column(db.DateTime, default=datetime.now)
+    updated_on = db.Column(db.TIMESTAMP, server_default=text(
+        'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
 
 
 class Post(db.Model):
